@@ -2852,24 +2852,42 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
  * 好处：React 侧一行不改 —— 逐字上屏、「正在输入」动画、链接识别与下划线、
  * 多轮上下文都自动生效；模型没配置或调用失败时，原样退回本地知识库作答。
  *
- * 配置优先级：localStorage['libao_llm_cfg']  >  window.__LIBAO_LLM__
- * 密钥默认只存本机浏览器，不写进公开仓库。
+ * 配置优先级：localStorage['libao_llm_cfg']  >  window.__LIBAO_LLM__  >  DEFAULT_CFG
+ *
+ * 关于密钥：默认配置里【不含 key】。目标 MaaS 端点
+ * (http://61.188.36.255:18000/maas/v1) 只有 HTTP 且预检返回 401，浏览器无法直连，
+ * 因此走 https 转发代理，密钥留在代理服务端（见 llm_proxy.js / worker/llm-proxy.js）。
+ * 这样页面公开也不会泄露 key。
  */
 (function () {
   'use strict';
   var LS_KEY = 'libao_llm_cfg';
+
+  /* 默认接入点：HTTPS 转发代理（服务端持有 key 与上游地址） */
+  var DEFAULT_CFG = {
+    url: 'https://cod-attorneys-every-upon.trycloudflare.com/v1/chat/completions',
+    model: 'DeepSeek-V4-Flash'
+  };
   var FORCED = window.__LIBAO_LLM__ || null;
   var history = [];              /* 多轮上下文，仅内存 */
   var lastErrAt = 0;
   var Z = 2147483480;
+  /* 连续失败 2 次即熔断 10 分钟，避免代理离线后每次提问都干等 */
+  var failCount = 0, brokenUntil = 0;
 
   /* ---------------- 配置 ---------------- */
   function readCfg() {
     var c = null;
     try { c = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { c = null; }
     if (!c && FORCED) c = FORCED;
+    if (!c && DEFAULT_CFG.url) c = DEFAULT_CFG;
     if (!c || !c.url || !c.model) return null;
     return c;
+  }
+
+  /* https 页面调 http 端点会被浏览器当作混合内容直接拦死，提前判定避免白等 */
+  function mixedContent(c) {
+    return location.protocol === 'https:' && /^http:\/\//i.test(String(c.url || ''));
   }
   function endpoint(c) {
     var u = String(c.url || '').trim();
@@ -2961,6 +2979,16 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     var prompt = (body.params && body.params.prompt) || body.prompt || '';
     var c = readCfg();
     if (!c || !prompt) return jsonResp();
+    /* 熔断期内直接走本地知识库，不再发起请求 */
+    if (Date.now() < brokenUntil) return jsonResp();
+    /* https 页面 + http 端点：请求发出去也必被拦，直接回落本地资料并提示 */
+    if (mixedContent(c)) {
+      if (Date.now() - lastErrAt > 15000) {
+        lastErrAt = Date.now();
+        myToast('接口地址是 HTTP，https 页面无法直连，请改用 https 代理地址');
+      }
+      return jsonResp();
+    }
     if (typeof ReadableStream === 'undefined') return jsonResp();
 
     var parts = splitPrompt(prompt);
@@ -2979,6 +3007,7 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
         function push(s) { if (!closed) { try { ctrl.enqueue(enc.encode(s)); } catch (e) { } } }
         function finish() {
           if (closed) return;
+          failCount = 0; brokenUntil = 0;
           push(frame('', true));
           closed = true;
           try { ctrl.close(); } catch (e) { }
@@ -2987,14 +3016,24 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
         function bail(msg, throttle) {
           if (closed) return;
           closed = true;
+          failCount++;
+          if (failCount >= 2) brokenUntil = Date.now() + 600000;
           try { ctrl.close(); } catch (e) { }
-          if (!throttle || Date.now() - lastErrAt > 10000) { lastErrAt = Date.now(); myToast(msg); }
+          if (!throttle || Date.now() - lastErrAt > 10000) {
+            lastErrAt = Date.now();
+            myToast(failCount >= 2 ? msg + '（10 分钟内直接用本地资料）' : msg);
+          }
         }
 
         var timer = setTimeout(function () {
           if (ac) { try { ac.abort(); } catch (e) { } }
-          if (answered) finish(); else bail('联网模型超时（90s），已用本地资料回答', true);
+          if (answered) finish(); else bail('模型超时未响应（90s），已用本地资料回答', true);
         }, 90000);
+
+        /* 首字节超时：代理离线时不必干等 90 秒，15 秒没吐字就回落 */
+        var firstTimer = setTimeout(function () {
+          if (!answered && ac) { try { ac.abort(); } catch (e) { } }
+        }, 15000);
 
         function run() {
           fetch(endpoint(c), {
@@ -3031,13 +3070,13 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
                   var obj = null;
                   try { obj = JSON.parse(data); } catch (e2) { continue; }
                   var txt = deltaOf(obj);
-                  if (txt) { answered += txt; push(frame(txt, false)); }
+                  if (txt) { answered += txt; clearTimeout(firstTimer); push(frame(txt, false)); }
                 }
                 return pump();
               });
             }
             return pump().then(function () {
-              clearTimeout(timer);
+              clearTimeout(timer); clearTimeout(firstTimer);
               if (!answered) return bail('模型没有返回内容，已用本地资料回答', true);
               history.push({ role: 'user', content: parts.q });
               history.push({ role: 'assistant', content: answered });
@@ -3045,13 +3084,17 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
               finish();
             });
           }).catch(function (e) {
-            clearTimeout(timer);
+            clearTimeout(timer); clearTimeout(firstTimer);
             if (answered) { finish(); myToast('网络中断，回答可能不完整'); return; }
             var m = String((e && e.message) || e);
-            if (/Failed to fetch|NetworkError|CORS/i.test(m)) {
-              bail('模型接口跨域被拦（需用代理地址），已改用本地资料', true);
+            if (/Failed to fetch|NetworkError|CORS|Load failed/i.test(m) || /AbortError/i.test(m)) {
+              bail('模型服务暂时连不上，已用本地资料回答', true);
+            } else if (/HTTP 502|HTTP 503|HTTP 504/.test(m)) {
+              bail('模型代理离线，已用本地资料回答', true);
+            } else if (/HTTP 401|HTTP 403/.test(m)) {
+              bail('模型密钥未授权，已用本地资料回答', true);
             } else {
-              bail('联网模型调用失败：' + m.slice(0, 50) + '，已改用本地资料', true);
+              bail('模型调用失败：' + m.slice(0, 50) + '，已用本地资料回答', true);
             }
           });
         }
@@ -3113,13 +3156,13 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
         '<b style="font-size:16px">理宝 · 大模型接入</b>' +
         '<button type="button" data-close="1" style="border:0;background:#f1f4f9;width:30px;height:30px;border-radius:50%;font-size:16px;color:#5b6b85;cursor:pointer">×</button>' +
         '</div>' +
-        '<p style="margin:0 0 14px;font-size:12px;color:#7b8798;line-height:1.6">填 OpenAI 兼容的接口地址即可（DeepSeek / 通义 / 智谱 / 豆包 / 讯飞星火 / 自建代理都支持）。密钥只存在这台设备的浏览器里，不会写进代码仓库。</p>' +
+        '<p style="margin:0 0 14px;font-size:12px;color:#7b8798;line-height:1.6">填 OpenAI 兼容的接口地址。注意：目标 MaaS 端点 <code style="background:#f1f4f9;padding:1px 4px;border-radius:4px">http://61.188.36.255:18000/maas/v1</code> 只有 HTTP，本页是 HTTPS，浏览器会以混合内容拦截，所以这里要填 <b>https 代理地址</b>（服务端持有密钥）。</p>' +
         '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">接口地址</label>' +
-        '<input id="llm-url" placeholder="https://api.deepseek.com/v1/chat/completions" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:12px">' +
+        '<input id="llm-url" placeholder="https://你的代理/v1/chat/completions" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:12px">' +
         '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">模型名</label>' +
-        '<input id="llm-model" placeholder="deepseek-chat" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:12px">' +
-        '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">API Key</label>' +
-        '<input id="llm-key" type="password" placeholder="sk-......" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:8px">' +
+        '<input id="llm-model" placeholder="DeepSeek-V4-Flash" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:12px">' +
+        '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">API Key（走代理时留空）</label>' +
+        '<input id="llm-key" type="password" placeholder="留空即由代理注入密钥" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:8px">' +
         '<p id="llm-note" style="margin:0 0 14px;font-size:12px;color:#7b8798;line-height:1.6"></p>' +
         '<div style="display:flex;gap:8px">' +
         '<button type="button" id="llm-save" style="flex:1;padding:12px;border:0;border-radius:12px;background:linear-gradient(120deg,#1d4ed8,#4f46e5,#8b5cf6);color:#fff;font-weight:600;font-size:14px;cursor:pointer">保存</button>' +
@@ -3154,6 +3197,9 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
       q('llm-test').onclick = function () {
         var url = q('llm-url').value.trim(), model = q('llm-model').value.trim(), key = q('llm-key').value.trim();
         if (!url || !model) return say('接口地址和模型名都要填', 1);
+        if (location.protocol === 'https:' && /^http:\/\//i.test(url)) {
+          return say('这个地址是 HTTP，https 页面会被浏览器以混合内容拦截；请填 https 代理地址', 1);
+        }
         say('测试中…');
         var t0 = Date.now();
         fetch(/\/chat\/completions$/.test(url) ? url : url.replace(/\/+$/, '') + (/\/v\d+$/.test(url.replace(/\/+$/, '')) ? '/chat/completions' : '/v1/chat/completions'), {
@@ -3169,7 +3215,7 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
           })
           .catch(function (e) {
             var m = String((e && e.message) || e);
-            say(/Failed to fetch|CORS/i.test(m) ? '被浏览器跨域拦截：请改用允许跨域的代理地址（如 Cloudflare Worker）' : '请求失败：' + m.slice(0, 80), 1);
+            say(/Failed to fetch|CORS|Load failed/i.test(m) ? '连不上：代理可能离线，或该地址未放行跨域' : '请求失败：' + m.slice(0, 80), 1);
           });
       };
     }
