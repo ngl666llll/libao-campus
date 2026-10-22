@@ -12,6 +12,10 @@
 </script><script>/* __SPARK_HEAD_SHIM__ */
 (function(){try{
   function isSpark(u){return typeof u==='string'&&(u.indexOf('/spark/')>=0||u.indexOf('/api/capability/')>=0);}
+  /* 平台遥测 SDK 的配置里塞了一个畸形地址（"async <当前页地址>"），
+     它会被 XHR/fetch 当真实 URL 发出去，GitHub Pages 上就是一条 404。
+     这不是业务请求，直接吞掉。 */
+  function isJunk(u){return typeof u==='string'&&/^async\s/i.test(u);}
   /* 静态站点没有 /routes.json，真去请求会 404；直接给空路由表 */
   function isRoutes(u){return typeof u==='string'&&/\/routes\.json(\?|$)/.test(u);}
   function jsonResp(body){try{return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));}
@@ -19,12 +23,13 @@
   if(window.fetch){var _f=window.fetch;window.fetch=function(u,o){
     var s=(typeof u==='string')?u:(u&&u.url)||'';
     if(isRoutes(s))return jsonResp('[{"path":"/"}]');
+    if(isJunk(s))return jsonResp('{}');
     /* 能力调用（含 AI 流式）也没有后端：回一个空 JSON，让调用方走本地兜底，
        既不产生 405/404，也不会让对话停在"正在输入" */
     if(isSpark(s))return jsonResp('{}');
     return _f.apply(this,arguments);};}
   if(window.XMLHttpRequest){var _o=XMLHttpRequest.prototype.open,_s=XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.open=function(m,u){try{this.__spark=isSpark(String(u));}catch(e){}return _o.apply(this,arguments);};
+    XMLHttpRequest.prototype.open=function(m,u){try{this.__spark=isSpark(String(u))||isJunk(String(u));}catch(e){}return _o.apply(this,arguments);};
     XMLHttpRequest.prototype.send=function(){if(this.__spark)return;return _s.apply(this,arguments);};}
 }catch(e){}})();
 </script><script>/* __STORAGE_SHIM__ */
