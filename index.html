@@ -18,7 +18,7 @@
     catch(e){return Promise.resolve({ok:true,json:function(){return Promise.resolve(JSON.parse(body));},text:function(){return Promise.resolve(body);}});}}
   if(window.fetch){var _f=window.fetch;window.fetch=function(u,o){
     var s=(typeof u==='string')?u:(u&&u.url)||'';
-    if(isRoutes(s))return jsonResp('[]');
+    if(isRoutes(s))return jsonResp('[{"path":"/"}]');
     /* 能力调用（含 AI 流式）也没有后端：回一个空 JSON，让调用方走本地兜底，
        既不产生 405/404，也不会让对话停在"正在输入" */
     if(isSpark(s))return jsonResp('{}');
