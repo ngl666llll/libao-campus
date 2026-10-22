@@ -2756,5 +2756,91 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
   };
 })();
 </script>
+<script>
+/* __NAV_FIT__ 顶栏自适应：6 个入口在 <=390px 的手机上放不下，
+   「地图」被裁到容器外，既看不见也点不到。这里按溢出情况渐进三档收敛：
+   1 档收内边距与字号 → 2 档品牌只留 logo → 3 档全部只留图标（仍不够才横滑）。 */
+(function () {
+  var NAV = 'header nav.glass-pill-nav';
+  var st = document.createElement('style');
+  st.id = 'cdut-nav-fit-css';
+  st.textContent = [
+    NAV + '.cdut-fit1 a,' + NAV + '.cdut-fit1 button{padding-left:4px!important;padding-right:4px!important;font-size:12px!important;gap:2px!important;}',
+    NAV + '.cdut-fit1{gap:0!important;}',
+    NAV + '.cdut-fit2 [data-cdut-brand] span{display:none!important;}',
+    NAV + '.cdut-fit2 a,' + NAV + '.cdut-fit2 button{padding-left:3px!important;padding-right:3px!important;font-size:11.5px!important;}',
+    NAV + '.cdut-fit3 a span,' + NAV + '.cdut-fit3 button span{display:none!important;}',
+    NAV + '.cdut-fit3 a,' + NAV + '.cdut-fit3 button{min-width:36px!important;justify-content:center!important;padding-left:0!important;padding-right:0!important;}',
+    NAV + '.cdut-fit3{overflow-x:auto!important;}'
+  ].join('\n');
+  document.head.appendChild(st);
+
+  /* 用「最后一项的右边界 vs nav 内容右边界」判断，比 scrollWidth 可靠：
+     nav 自带 overflow-x:auto 且内部有 flex 收缩，scrollWidth 常常等于 clientWidth，
+     但实际上末项已经被挤到可视区外（正是「地图」被裁掉的原因）。 */
+  function isOver(nav) {
+    var its = nav.querySelectorAll('a, button');
+    if (!its.length) return false;
+    var last = its[its.length - 1].getBoundingClientRect();
+    var nr = nav.getBoundingClientRect();
+    var padR = parseFloat(getComputedStyle(nav).paddingRight) || 0;
+    return last.right > nr.right - padR + 1;
+  }
+
+  function fit() {
+    var nav = document.querySelector(NAV);
+    if (!nav) return;
+    /* 只在手机宽度收敛。PC 上 nav 是居中自适应宽的胶囊，
+       误判溢出会把整条导航压成一小块，绝不能碰。 */
+    if (window.innerWidth > 430) {
+      nav.classList.remove('cdut-fit1', 'cdut-fit2', 'cdut-fit3');
+      return;
+    }
+    if (!nav.querySelector('[data-cdut-brand]')) {
+      var as = nav.querySelectorAll('a');
+      for (var i = 0; i < as.length; i++) {
+        if (/理宝/.test(as[i].textContent || '')) { as[i].setAttribute('data-cdut-brand', '1'); break; }
+      }
+    }
+    nav.classList.remove('cdut-fit1', 'cdut-fit2', 'cdut-fit3');
+    if (!isOver(nav)) return;
+    nav.classList.add('cdut-fit1');
+    if (!isOver(nav)) return;
+    nav.classList.add('cdut-fit2');
+    if (!isOver(nav)) return;
+    nav.classList.add('cdut-fit3');
+    /* 只剩图标时补上可读名称，避免用户猜 */
+    var its = nav.querySelectorAll('a, button');
+    for (var k = 0; k < its.length; k++) {
+      var t = (its[k].textContent || '').trim();
+      if (t && !its[k].getAttribute('aria-label')) its[k].setAttribute('aria-label', t);
+      if (t && !its[k].title) its[k].title = t;
+    }
+  }
+  window.__cdutFitNav = fit;
+
+  var t = 0, lastNav = null;
+  function later(ms) { clearTimeout(t); t = setTimeout(fit, ms || 120); }
+  function hasFit(nav) {
+    return nav.classList.contains('cdut-fit1') || nav.classList.contains('cdut-fit2') ||
+      nav.classList.contains('cdut-fit3');
+  }
+  /* 路由切换会让 React 重建 header/nav，新的 nav 没有 cdut-fit 类，
+     原来只在固定时间点算一次，切页后就退回「地图被裁」的状态。
+     这里持续校验：节点被换掉、或溢出状态与已应用的档位不一致时重算。
+     600ms 一次、只读几何信息，开销可忽略。 */
+  function tick() {
+    var nav = document.querySelector(NAV);
+    if (!nav) return;
+    if (nav !== lastNav) { lastNav = nav; fit(); return; }
+    if (hasFit(nav) !== isOver(nav)) fit();
+  }
+  fit();
+  [200, 500, 1200, 2500].forEach(function (ms) { setTimeout(fit, ms); });
+  setInterval(tick, 600);
+  window.addEventListener('resize', function () { later(120); });
+  window.addEventListener('orientationchange', function () { later(400); });
+})();
+</script>
 </body>
 </html>
