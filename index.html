@@ -2842,5 +2842,352 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
   try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { later(80); }); } catch (e) { }
 })();
 </script>
+<script>/* __LLM_BRIDGE__ 真实大模型接入
+ *
+ * 原理：理宝的对话由内置 SDK 通过 fetch 调 /api/capability/...（SSE）实现，
+ * 原先是静态站点没有后端，被 head shim 直接吞成 '{}'，于是只能靠本地资料兜底。
+ * 这里在 fetch 层做「协议桥」：把 SDK 发出去的 prompt 取出来，转成 OpenAI 兼容的
+ * chat/completions 请求，再把模型吐出的 token 按 SDK 认的 SSE 帧格式写回去。
+ *
+ * 好处：React 侧一行不改 —— 逐字上屏、「正在输入」动画、链接识别与下划线、
+ * 多轮上下文都自动生效；模型没配置或调用失败时，原样退回本地知识库作答。
+ *
+ * 配置优先级：localStorage['libao_llm_cfg']  >  window.__LIBAO_LLM__
+ * 密钥默认只存本机浏览器，不写进公开仓库。
+ */
+(function () {
+  'use strict';
+  var LS_KEY = 'libao_llm_cfg';
+  var FORCED = window.__LIBAO_LLM__ || null;
+  var history = [];              /* 多轮上下文，仅内存 */
+  var lastErrAt = 0;
+  var Z = 2147483480;
+
+  /* ---------------- 配置 ---------------- */
+  function readCfg() {
+    var c = null;
+    try { c = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { c = null; }
+    if (!c && FORCED) c = FORCED;
+    if (!c || !c.url || !c.model) return null;
+    return c;
+  }
+  function endpoint(c) {
+    var u = String(c.url || '').trim();
+    if (/\/chat\/completions$/.test(u)) return u;
+    u = u.replace(/\/+$/, '');
+    if (/\/v\d+$/.test(u)) return u + '/chat/completions';
+    return u + '/v1/chat/completions';
+  }
+  function reqHeaders(c) {
+    var h = { 'Content-Type': 'application/json' };
+    if (c.key) h['Authorization'] = 'Bearer ' + c.key;
+    if (c.headers) for (var k in c.headers) if (Object.prototype.hasOwnProperty.call(c.headers, k)) h[k] = c.headers[k];
+    return h;
+  }
+
+  /* ---------------- 提示词拆分 ----------------
+   * SDK 发来的 prompt 形如「<理宝人设 + 校园知识库>\n\n【新生提问】\n<问题>\n\n请用理宝的身份…」，
+   * 拆成 system（人设+资料）和 user（问题），多轮时才不会把历史问题混进资料里。 */
+  function splitPrompt(p) {
+    var s = String(p || '');
+    var at = s.indexOf('【新生提问】');
+    if (at < 0) return { sys: '', q: s.trim() };
+    var sys = s.slice(0, at).trim();
+    var q = s.slice(at + 6);
+    var tail = q.indexOf('请用理宝的身份');
+    if (tail > 0) q = q.slice(0, tail);
+    return { sys: sys, q: q.trim() };
+  }
+
+  /* 各家 OpenAI 兼容实现的增量字段略有差异，能取到就取 */
+  function deltaOf(o) {
+    if (!o) return '';
+    if (typeof o === 'string') return o;
+    var ch = o.choices && o.choices[0];
+    if (ch) {
+      var d = ch.delta || ch.message || {};
+      if (typeof d.content === 'string') return d.content;
+      if (d.content && d.content.length) {
+        var acc = '';
+        for (var i = 0; i < d.content.length; i++) acc += (d.content[i] && d.content[i].text) || '';
+        return acc;
+      }
+      if (typeof ch.text === 'string') return ch.text;
+    }
+    if (o.delta && typeof o.delta.text === 'string') return o.delta.text;
+    if (typeof o.output_text === 'string') return o.output_text;
+    return '';
+  }
+
+  function frame(text, done) {
+    /* status_code 必须是字符串 "0"：SDK 内部 kb.SUCCESS 就是 '0'，用 === 比较，
+       发数字 0 会被整帧丢掉，页面表现成「有回答但字不显示」。 */
+    return 'data: ' + JSON.stringify({
+      status_code: '0',
+      data: { type: 'content', delta: { content: done ? '' : text }, finished: !!done }
+    }) + '\n\n';
+  }
+  function jsonResp() {
+    return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+  function isCap(u) {
+    return typeof u === 'string' && (u.indexOf('/spark/') >= 0 || u.indexOf('/api/capability/') >= 0);
+  }
+
+  /* ---------------- 轻提示 ---------------- */
+  var toastEl = null, toastT = 0;
+  function myToast(msg) {
+    try {
+      if (!toastEl) {
+        toastEl = document.createElement('div');
+        toastEl.id = 'libao-llm-toast';
+        toastEl.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);' +
+          'max-width:86vw;padding:10px 16px;border-radius:14px;background:rgba(31,42,61,.9);color:#fff;' +
+          'font-size:13px;line-height:1.5;z-index:' + (Z + 120) + ';pointer-events:none;' +
+          'box-shadow:0 8px 24px rgba(0,0,0,.18);transition:opacity .25s;opacity:0;';
+        document.body.appendChild(toastEl);
+      }
+      toastEl.textContent = msg;
+      toastEl.style.opacity = '1';
+      clearTimeout(toastT);
+      toastT = setTimeout(function () { if (toastEl) toastEl.style.opacity = '0'; }, 3600);
+    } catch (e) { }
+  }
+
+  /* ---------------- 协议桥 ---------------- */
+  function bridge(init) {
+    var body = {};
+    try { body = JSON.parse((init && init.body) || '{}'); } catch (e) { }
+    var prompt = (body.params && body.params.prompt) || body.prompt || '';
+    var c = readCfg();
+    if (!c || !prompt) return jsonResp();
+    if (typeof ReadableStream === 'undefined') return jsonResp();
+
+    var parts = splitPrompt(prompt);
+    var msgs = [];
+    if (parts.sys) msgs.push({ role: 'system', content: parts.sys });
+    for (var i = 0; i < history.length; i++) msgs.push(history[i]);
+    msgs.push({ role: 'user', content: parts.q });
+
+    var enc = new TextEncoder();
+    var ac = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var answered = '';
+
+    var stream = new ReadableStream({
+      start: function (ctrl) {
+        var closed = false;
+        function push(s) { if (!closed) { try { ctrl.enqueue(enc.encode(s)); } catch (e) { } } }
+        function finish() {
+          if (closed) return;
+          push(frame('', true));
+          closed = true;
+          try { ctrl.close(); } catch (e) { }
+        }
+        /* 一帧都不发就关流 → 前端累积内容为空 → 自动走本地知识库 */
+        function bail(msg, throttle) {
+          if (closed) return;
+          closed = true;
+          try { ctrl.close(); } catch (e) { }
+          if (!throttle || Date.now() - lastErrAt > 10000) { lastErrAt = Date.now(); myToast(msg); }
+        }
+
+        var timer = setTimeout(function () {
+          if (ac) { try { ac.abort(); } catch (e) { } }
+          if (answered) finish(); else bail('联网模型超时（90s），已用本地资料回答', true);
+        }, 90000);
+
+        function run() {
+          fetch(endpoint(c), {
+            method: 'POST',
+            headers: reqHeaders(c),
+            body: JSON.stringify({
+              model: c.model,
+              messages: msgs,
+              stream: true,
+              temperature: c.temperature == null ? 0.6 : c.temperature,
+              max_tokens: c.maxTokens || 1200
+            }),
+            signal: ac ? ac.signal : undefined
+          }).then(function (res) {
+            if (!res.ok) {
+              return res.text().then(function (t) {
+                throw new Error('HTTP ' + res.status + (t ? ' ' + t.slice(0, 100) : ''));
+              });
+            }
+            if (!res.body) throw new Error('响应体为空');
+            var rd = res.body.getReader(), dec = new TextDecoder(), buf = '';
+            function pump() {
+              return rd.read().then(function (r) {
+                if (r.done) return;
+                buf += dec.decode(r.value, { stream: true });
+                var lines = buf.split('\n');
+                buf = lines.pop() || '';
+                for (var j = 0; j < lines.length; j++) {
+                  var ln = lines[j].replace(/\r$/, '').trim();
+                  if (!ln || ln.charAt(0) === ':') continue;
+                  if (ln.indexOf('data:') !== 0) continue;
+                  var data = ln.slice(5).trim();
+                  if (data === '[DONE]') continue;
+                  var obj = null;
+                  try { obj = JSON.parse(data); } catch (e2) { continue; }
+                  var txt = deltaOf(obj);
+                  if (txt) { answered += txt; push(frame(txt, false)); }
+                }
+                return pump();
+              });
+            }
+            return pump().then(function () {
+              clearTimeout(timer);
+              if (!answered) return bail('模型没有返回内容，已用本地资料回答', true);
+              history.push({ role: 'user', content: parts.q });
+              history.push({ role: 'assistant', content: answered });
+              if (history.length > 8) history = history.slice(-8);
+              finish();
+            });
+          }).catch(function (e) {
+            clearTimeout(timer);
+            if (answered) { finish(); myToast('网络中断，回答可能不完整'); return; }
+            var m = String((e && e.message) || e);
+            if (/Failed to fetch|NetworkError|CORS/i.test(m)) {
+              bail('模型接口跨域被拦（需用代理地址），已改用本地资料', true);
+            } else {
+              bail('联网模型调用失败：' + m.slice(0, 50) + '，已改用本地资料', true);
+            }
+          });
+        }
+        run();
+      }
+    });
+    return new Response(stream, {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache' }
+    });
+  }
+
+  /* 只接管「对话」这一路能力调用，其它 capability 调用保持原样被吞掉 */
+  if (window.fetch) {
+    var prevFetch = window.fetch;
+    window.fetch = function (u, init) {
+      try {
+        var s = typeof u === 'string' ? u : (u && u.url) || '';
+        if (isCap(s)) {
+          var b = (init && init.body) || '';
+          if (typeof b === 'string' && b.indexOf('textGenerate') >= 0 && readCfg()) return Promise.resolve(bridge(init));
+        }
+      } catch (e) { }
+      return prevFetch.apply(this, arguments);
+    };
+  }
+
+  /* ---------------- 配置面板（仅在 ?setup=1 时出现） ---------------- */
+  function mountSetup() {
+    var on = /[?&]setup=1/.test(location.search) || location.hash === '#setup';
+    if (!on || document.getElementById('libao-llm-fab')) return;
+
+    var fab = document.createElement('button');
+    fab.id = 'libao-llm-fab';
+    fab.type = 'button';
+    fab.textContent = '⚙ 模型接入';
+    fab.style.cssText = 'position:fixed;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:' + Z + ';' +
+      'padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.75);' +
+      'background:rgba(255,255,255,.86);backdrop-filter:blur(12px);color:#2b3550;font-size:12.5px;font-weight:600;' +
+      'box-shadow:0 6px 18px rgba(31,42,61,.14);cursor:pointer;';
+    document.body.appendChild(fab);
+
+    var panel = null;
+    function close() { if (panel) { panel.remove(); panel = null; } }
+
+    function open() {
+      if (panel) return;
+      var c = readCfg() || {};
+      panel = document.createElement('div');
+      panel.id = 'libao-llm-panel';
+      panel.style.cssText = 'position:fixed;inset:0;z-index:' + (Z + 60) + ';background:rgba(15,23,42,.32);' +
+        'display:flex;align-items:flex-end;justify-content:center;padding:0;';
+      var card = document.createElement('div');
+      card.style.cssText = 'width:100%;max-width:520px;max-height:86vh;overflow:auto;background:#fff;' +
+        'border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));' +
+        'box-shadow:0 -10px 40px rgba(15,23,42,.2);font-size:14px;color:#1f2a3d;';
+      card.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
+        '<b style="font-size:16px">理宝 · 大模型接入</b>' +
+        '<button type="button" data-close="1" style="border:0;background:#f1f4f9;width:30px;height:30px;border-radius:50%;font-size:16px;color:#5b6b85;cursor:pointer">×</button>' +
+        '</div>' +
+        '<p style="margin:0 0 14px;font-size:12px;color:#7b8798;line-height:1.6">填 OpenAI 兼容的接口地址即可（DeepSeek / 通义 / 智谱 / 豆包 / 讯飞星火 / 自建代理都支持）。密钥只存在这台设备的浏览器里，不会写进代码仓库。</p>' +
+        '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">接口地址</label>' +
+        '<input id="llm-url" placeholder="https://api.deepseek.com/v1/chat/completions" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:12px">' +
+        '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">模型名</label>' +
+        '<input id="llm-model" placeholder="deepseek-chat" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:12px">' +
+        '<label style="display:block;font-size:12px;color:#5b6b85;margin:0 0 6px">API Key</label>' +
+        '<input id="llm-key" type="password" placeholder="sk-......" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #dde4ee;border-radius:12px;font-size:13px;margin-bottom:8px">' +
+        '<p id="llm-note" style="margin:0 0 14px;font-size:12px;color:#7b8798;line-height:1.6"></p>' +
+        '<div style="display:flex;gap:8px">' +
+        '<button type="button" id="llm-save" style="flex:1;padding:12px;border:0;border-radius:12px;background:linear-gradient(120deg,#1d4ed8,#4f46e5,#8b5cf6);color:#fff;font-weight:600;font-size:14px;cursor:pointer">保存</button>' +
+        '<button type="button" id="llm-test" style="flex:1;padding:12px;border:1px solid #dde4ee;border-radius:12px;background:#fff;color:#334155;font-weight:600;font-size:14px;cursor:pointer">测试连接</button>' +
+        '<button type="button" id="llm-clear" style="padding:12px 14px;border:1px solid #f0d9d9;border-radius:12px;background:#fff;color:#b23b3b;font-weight:600;font-size:14px;cursor:pointer">清除</button>' +
+        '</div>' +
+        '<p id="llm-msg" style="margin:12px 0 0;font-size:12.5px;line-height:1.6;min-height:18px"></p>';
+      panel.appendChild(card);
+      document.body.appendChild(panel);
+      var q = function (id) { return document.getElementById(id); };
+      q('llm-url').value = c.url || '';
+      q('llm-model').value = c.model || '';
+      q('llm-key').value = c.key || '';
+      q('llm-note').textContent = c.url ? '当前已接入：' + (c.model || '') + '（改完点保存生效）' : '当前未接入，正在用本地知识库回答。';
+      function say(t, bad) { var m = q('llm-msg'); m.textContent = t; m.style.color = bad ? '#b23b3b' : '#1a7f4b'; }
+      panel.addEventListener('click', function (e) { if (e.target === panel || e.target.getAttribute('data-close')) close(); });
+      q('llm-save').onclick = function () {
+        var cfg = { url: q('llm-url').value.trim(), model: q('llm-model').value.trim(), key: q('llm-key').value.trim() };
+        if (!cfg.url || !cfg.model) return say('接口地址和模型名都要填', 1);
+        try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) { return say('本机存储不可用（隐私模式？）', 1); }
+        history = [];
+        say('已保存，去对话里问一句试试');
+        q('llm-note').textContent = '当前已接入：' + cfg.model;
+      };
+      q('llm-clear').onclick = function () {
+        try { localStorage.removeItem(LS_KEY); } catch (e) { }
+        history = [];
+        q('llm-url').value = ''; q('llm-model').value = ''; q('llm-key').value = '';
+        q('llm-note').textContent = '已清除，恢复本地知识库回答。';
+        say('已清除');
+      };
+      q('llm-test').onclick = function () {
+        var url = q('llm-url').value.trim(), model = q('llm-model').value.trim(), key = q('llm-key').value.trim();
+        if (!url || !model) return say('接口地址和模型名都要填', 1);
+        say('测试中…');
+        var t0 = Date.now();
+        fetch(/\/chat\/completions$/.test(url) ? url : url.replace(/\/+$/, '') + (/\/v\d+$/.test(url.replace(/\/+$/, '')) ? '/chat/completions' : '/v1/chat/completions'), {
+          method: 'POST',
+          headers: key ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key } : { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: model, messages: [{ role: 'user', content: '只回复两个字：通了' }], stream: false, max_tokens: 16 })
+        }).then(function (r) { return r.text().then(function (t) { return { ok: r.ok, status: r.status, t: t }; }); })
+          .then(function (o) {
+            if (!o.ok) return say('失败（HTTP ' + o.status + '）：' + o.t.slice(0, 120), 1);
+            var txt = '';
+            try { var j = JSON.parse(o.t); txt = deltaOf(j) || (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''; } catch (e) { txt = o.t.slice(0, 60); }
+            say('连接成功 · ' + (Date.now() - t0) + 'ms · 模型回复：' + String(txt).slice(0, 40));
+          })
+          .catch(function (e) {
+            var m = String((e && e.message) || e);
+            say(/Failed to fetch|CORS/i.test(m) ? '被浏览器跨域拦截：请改用允许跨域的代理地址（如 Cloudflare Worker）' : '请求失败：' + m.slice(0, 80), 1);
+          });
+      };
+    }
+    fab.onclick = open;
+  }
+
+  window.__libaoLLM = {
+    get cfg() { return readCfg(); },
+    save: function (c) { try { localStorage.setItem(LS_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } },
+    clear: function () { try { localStorage.removeItem(LS_KEY); } catch (e) { } history = []; },
+    reset: function () { history = []; },
+    get history() { return history.slice(0); },
+    endpoint: endpoint
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountSetup);
+  else mountSetup();
+})();
+</script>
 </body>
 </html>
