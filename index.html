@@ -11,11 +11,17 @@
 }catch(e){}})();
 </script><script>/* __SPARK_HEAD_SHIM__ */
 (function(){try{
-  function isSpark(u){return typeof u==='string'&&u.indexOf('/spark/')>=0;}
+  function isSpark(u){return typeof u==='string'&&(u.indexOf('/spark/')>=0||u.indexOf('/api/capability/')>=0);}
+  /* 静态站点没有 /routes.json，真去请求会 404；直接给空路由表 */
+  function isRoutes(u){return typeof u==='string'&&/\/routes\.json(\?|$)/.test(u);}
+  function jsonResp(body){try{return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));}
+    catch(e){return Promise.resolve({ok:true,json:function(){return Promise.resolve(JSON.parse(body));},text:function(){return Promise.resolve(body);}});}}
   if(window.fetch){var _f=window.fetch;window.fetch=function(u,o){
     var s=(typeof u==='string')?u:(u&&u.url)||'';
-    if(isSpark(s)){try{return Promise.resolve(new Response('{}',{status:200,headers:{'Content-Type':'application/json'}}));}
-    catch(e){return Promise.resolve({ok:true,json:function(){return Promise.resolve({});},text:function(){return Promise.resolve('{}');}});}}
+    if(isRoutes(s))return jsonResp('[]');
+    /* 能力调用（含 AI 流式）也没有后端：回一个空 JSON，让调用方走本地兜底，
+       既不产生 405/404，也不会让对话停在"正在输入" */
+    if(isSpark(s))return jsonResp('{}');
     return _f.apply(this,arguments);};}
   if(window.XMLHttpRequest){var _o=XMLHttpRequest.prototype.open,_s=XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.open=function(m,u){try{this.__spark=isSpark(String(u));}catch(e){}return _o.apply(this,arguments);};
