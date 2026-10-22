@@ -2787,28 +2787,7 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     return last.right > nr.right - padR + 1;
   }
 
-  function fit() {
-    var nav = document.querySelector(NAV);
-    if (!nav) return;
-    /* 只在手机宽度收敛。PC 上 nav 是居中自适应宽的胶囊，
-       误判溢出会把整条导航压成一小块，绝不能碰。 */
-    if (window.innerWidth > 430) {
-      nav.classList.remove('cdut-fit1', 'cdut-fit2', 'cdut-fit3');
-      return;
-    }
-    if (!nav.querySelector('[data-cdut-brand]')) {
-      var as = nav.querySelectorAll('a');
-      for (var i = 0; i < as.length; i++) {
-        if (/理宝/.test(as[i].textContent || '')) { as[i].setAttribute('data-cdut-brand', '1'); break; }
-      }
-    }
-    nav.classList.remove('cdut-fit1', 'cdut-fit2', 'cdut-fit3');
-    if (!isOver(nav)) return;
-    nav.classList.add('cdut-fit1');
-    if (!isOver(nav)) return;
-    nav.classList.add('cdut-fit2');
-    if (!isOver(nav)) return;
-    nav.classList.add('cdut-fit3');
+  function labelify(nav) {
     /* 只剩图标时补上可读名称，避免用户猜 */
     var its = nav.querySelectorAll('a, button');
     for (var k = 0; k < its.length; k++) {
@@ -2817,29 +2796,50 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
       if (t && !its[k].title) its[k].title = t;
     }
   }
+  function fit() {
+    var nav = document.querySelector(NAV);
+    if (!nav) return;
+    var w = window.innerWidth;
+    lastW = w;
+    if (!nav.querySelector('[data-cdut-brand]')) {
+      var as = nav.querySelectorAll('a');
+      for (var i = 0; i < as.length; i++) {
+        if (/理宝/.test(as[i].textContent || '')) { as[i].setAttribute('data-cdut-brand', '1'); break; }
+      }
+    }
+    /* 先按视口宽度直接定档，全程只在同步块末尾读一次几何。
+       绝不「撤销档位 → 读是否溢出 → 再加回」：撤销后浏览器还没重排，
+       读到的是上一帧的窄布局，于是判定「不需要档位」，下一轮又溢出 —— 无限抖动。 */
+    nav.classList.remove('cdut-fit1', 'cdut-fit2', 'cdut-fit3');
+    if (w > 430) return;                      /* PC 上 nav 是居中自适应胶囊，不能碰 */
+    var grade = w >= 400 ? 0 : (w >= 380 ? 1 : 2);
+    if (grade >= 1) nav.classList.add('cdut-fit1');
+    if (grade >= 2) nav.classList.add('cdut-fit2');
+    /* 兜底：仍放不下就继续升档（只升不降，避免反复） */
+    if (isOver(nav) && !nav.classList.contains('cdut-fit2')) nav.classList.add('cdut-fit2');
+    if (isOver(nav)) { nav.classList.add('cdut-fit3'); labelify(nav); }
+  }
   window.__cdutFitNav = fit;
 
-  var t = 0, lastNav = null;
+  var t = 0, lastNav = null, lastW = 0;
   function later(ms) { clearTimeout(t); t = setTimeout(fit, ms || 120); }
-  function hasFit(nav) {
-    return nav.classList.contains('cdut-fit1') || nav.classList.contains('cdut-fit2') ||
-      nav.classList.contains('cdut-fit3');
-  }
-  /* 路由切换会让 React 重建 header/nav，新的 nav 没有 cdut-fit 类，
-     原来只在固定时间点算一次，切页后就退回「地图被裁」的状态。
-     这里持续校验：节点被换掉、或溢出状态与已应用的档位不一致时重算。
-     600ms 一次、只读几何信息，开销可忽略。 */
+  /* 只在「导航节点被换掉」或「视口宽度变了」时重算。
+     不能用「加了档位之后还溢不溢出」来反推：加了档位导航就变窄、溢出随之消失，
+     那样会判定成「不需要档位」→ 撤销 → 又溢出 → 无限抖动（线上实测 2 秒一轮）。
+     视口宽度与节点引用都是外部事实，不受自己加类的影响，才是可靠的触发条件。 */
   function tick() {
     var nav = document.querySelector(NAV);
     if (!nav) return;
     if (nav !== lastNav) { lastNav = nav; fit(); return; }
-    if (hasFit(nav) !== isOver(nav)) fit();
+    if (window.innerWidth !== lastW) { lastW = window.innerWidth; fit(); }
   }
   fit();
   [200, 500, 1200, 2500].forEach(function (ms) { setTimeout(fit, ms); });
   setInterval(tick, 600);
   window.addEventListener('resize', function () { later(120); });
   window.addEventListener('orientationchange', function () { later(400); });
+  /* 中文字体加载完成后字宽会变，需要重算一次 */
+  try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { later(80); }); } catch (e) { }
 })();
 </script>
 </body>
