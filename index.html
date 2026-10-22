@@ -2610,6 +2610,12 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
           if (raw.length < 4) continue;
           var url = raw;
           if (!/^(https?:|libao:)/i.test(url)) url = 'https://' + url;
+          /* 过滤伪链接：模型偶发输出 "http://a" 这类 host 无点的串，
+             点了只会打开错误页，不如不画线 */
+          if (/^https?:/i.test(url)) {
+            var host = url.replace(/^https?:\/\//i, '').split(/[\/?#]/)[0];
+            if (host.indexOf('.') < 0 || host.length < 4) continue;
+          }
           push(node, el, m.index, raw.length, url);
         }
         /* 「成理校园卡」「校医院」这类名称：只有信息库里确实存在的实体才给可点区域，
