@@ -1035,6 +1035,10 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
 
 
 
+
+
+
+
 <script>
 /* ============================================================================
  * 理宝信息库（__LIBRARY_PATCHED__）
@@ -1489,9 +1493,12 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
   var guidesHtml = GUIDES.map(function (g) {
     var rows = (g.rows || []).map(function (r) {
       /* LIB-08：把用「｜」分隔的区间各自包成 inline-block，避免行首孤立分隔符 */
-      var val = String(r[1]).split('｜').map(function (x) {
-        return '<span class="nb">' + x.trim() + '</span>';
-      }).join('<span class="nb">｜</span>');
+      var segs = String(r[1]).split('｜');
+      var val = '';
+      for (var si = 0; si < segs.length; si++) {
+        /* 分隔符跟着前一段（行末收尾），行首就不会出现孤立的「｜」 */
+        val += '<span class="nb">' + segs[si].trim() + (si < segs.length - 1 ? ' ｜' : '') + '</span>';
+      }
       return '<div class="gd-row"><b>' + r[0] + '</b><span>' + val + '</span></div>';
     }).join('');
     var steps = g.steps
