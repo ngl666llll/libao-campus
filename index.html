@@ -1,4 +1,31 @@
-<!doctype html><html lang="zh-CN"><head><script>/* __STORAGE_SHIM__ */
+<!doctype html><html lang="zh-CN"><head><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
 (function(){try{
   function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
     setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
@@ -20,6 +47,189 @@
   if(window.XMLHttpRequest){var _o=XMLHttpRequest.prototype.open,_s=XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.open=function(m,u){try{this.__spark=isSpark(String(u));}catch(e){}return _o.apply(this,arguments);};
     XMLHttpRequest.prototype.send=function(){if(this.__spark)return;return _s.apply(this,arguments);};}
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__/i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observable|telemetry|collector|\/spark\/|apaas/i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
 }catch(e){}})();
 </script><script>/* __STORAGE_SHIM__ */
 (function(){try{
@@ -1249,6 +1459,18 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 <script>
 /* ============================================================================
  * 理宝信息库（__LIBRARY_PATCHED__）
@@ -1630,6 +1852,7 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     '  background:linear-gradient(120deg,#1332ae,#4f39f6 58%,#8d54ff);}',
     /* 手机端：面板铺满 */
     '@media (max-width:640px){',
+    '  input,select,textarea{font-size:16px!important;}',
     '  #lib-root .lib-panel{left:0;right:0;top:0;bottom:0;width:auto;max-height:none;',
     '    border-radius:0;transform:none;padding-top:env(safe-area-inset-top);}',
     '  #lib-root .lib-body{padding:12px 13px calc(22px + env(safe-area-inset-bottom));}',
@@ -2078,6 +2301,13 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
 
   var TYPE_TAG = { express: '取件', place: '地点', site: '网址', mini: '小程序', fact: '速查', guide: '指南' };
 
+  /* 用户输入会进 innerHTML（空态文案、AI 卡 data-q），必须转义，否则可注入脚本 */
+  function askEsc(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   function askNorm(t) { return String(t || '').replace(/\s+/g, '').toLowerCase(); }
 
   function askSearch(q) {
@@ -2140,8 +2370,8 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     box.classList.add('on');
     var hits = askSearch(q);
     if (!hits.length) {
-      box.innerHTML = '<div class="ask-empty">本地知识里没找到「' + q + '」<br>可以试试：<b>取快递</b> · <b>绩点</b> · <b>转专业</b> · <b>教务处</b> · <b>校园卡</b>' +
-        '<br><br><button data-act="ai" class="ask-ai-btn" data-q="' + q.replace(/"/g, '&quot;') + '">让 AI 回答这个问题</button></div>';
+      box.innerHTML = '<div class="ask-empty">本地知识里没找到「' + askEsc(q) + '」<br>可以试试：<b>取快递</b> · <b>绩点</b> · <b>转专业</b> · <b>教务处</b> · <b>校园卡</b>' +
+        '<br><br><button data-act="ai" class="ask-ai-btn" data-q="' + askEsc(q) + '">让 AI 回答这个问题</button></div>';
       return;
     }
     var h = '';
@@ -2151,7 +2381,7 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
            (TYPE_TAG[e.type] || '') + '</i>' + e.n + '</div><div class="ask-bb">' + (e.body || '') +
            '</div><div class="ask-aa">' + askActions(e) + '</div></div>';
     }
-    h += '<div class="ask-card ask-ai" data-q="' + q.replace(/"/g, '&quot;') + '">' +
+    h += '<div class="ask-card ask-ai" data-q="' + askEsc(q) + '">' +
          '<div class="ask-hh"><i class="ask-tag t-ai">AI</i>让大模型详细回答</div>' +
          '<div class="ask-bb">本地条目没说清？交给 DeepSeek-V4-Flash 补充（需联网，约 3 秒）。</div>' +
          '<div class="ask-aa"><button data-act="ai">问 AI</button></div></div>';
@@ -2417,7 +2647,23 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     window.addEventListener('hashchange', function () { setTimeout(apply, 30); setTimeout(apply, 260); });
     window.addEventListener('popstate', function () { setTimeout(apply, 60); setTimeout(apply, 320); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { cur = -1; apply(); } });
-    document.addEventListener('click', function () { cur = -1; setTimeout(apply, 80); setTimeout(apply, 420); }, true);
+    document.addEventListener('click', function (ev) {
+      /* 两个全屏面板会叠在一起：点「地图」时若信息库开着先关掉，反之亦然 */
+      try {
+        var t = ev.target && ev.target.closest ? ev.target.closest('a,button') : null;
+        var txt = t ? (t.textContent || '').replace(/\s+/g, '') : '';
+        if (txt === '地图' && window.__cdutCloseLib) {
+          var l = document.getElementById('lib-root');
+          if (l && l.classList.contains('on')) window.__cdutCloseLib();
+        }
+        if (txt === '信息库' && window.__cdutCloseMap) {
+          var m = document.getElementById('cdut-map-root');
+          if (m && m.classList.contains('cdut-open')) window.__cdutCloseMap();
+        }
+      } catch (e) { }
+      cur = -1;
+      setTimeout(apply, 80); setTimeout(apply, 420);
+    }, true);
     setInterval(apply, 500);
     apply();
   })();
