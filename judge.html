@@ -114,9 +114,9 @@
         <b>源码仓库 →</b>
         <span>单文件实现，WebGL 渲染器与问答引擎全部可读</span>
       </a>
-      <a class="entry" href="./" id="eHome">
-        <b>作品首页 →</b>
-        <span>完整的新生动线：入学准备 → 导航 → 办事</span>
+      <a class="entry" href="https://libao-campus-map.app.workbuddy.host/ai?sharecode=GQNQ4EIBPA" target="_blank" rel="noopener">
+        <b>AI 问答（大模型）→</b>
+        <span>接入 DeepSeek-V4-Flash，答案由大模型生成</span>
       </a>
     </div>
   </div>
@@ -138,7 +138,7 @@
     <h2><i>4</i>关于「接入 API」</h2>
     <div class="kv"><div class="k">问答引擎</div><div class="v">本地意图匹配，58 条知识条目，响应 &lt;10 毫秒，<b>断网可用</b>，不把校内政策问题发往云端。</div></div>
     <div class="kv"><div class="k">场景数据</div><div class="v"><code>scene.json</code> 描述建筑轮廓、高度、屋顶参数、标签与路网，修改数据重新构建即可，无需重做模型。</div></div>
-    <div class="kv"><div class="k">云端通道</div><div class="v">预留了大模型问答接口位（开通云端服务后可切换，支持按用户限次）。当前版本默认走本地引擎，保证离线与响应速度。</div></div>
+    <div class="kv"><div class="k">云端通道</div><div class="v">已接入校内 MaaS 的 DeepSeek-V4-Flash（见上方「AI 问答」入口，由服务端中转，密钥不下发到浏览器）；主站内置的问答仍是本地引擎，保证断网可用与毫秒级响应。</div></div>
     <div class="kv"><div class="k">身份说明</div><div class="v">本页的 GitHub 身份为<b>公开资料标识</b>，非 OAuth 授权登录；如需真正的 GitHub 授权（读取私有仓库等），需部署一个换取 token 的后端服务。</div></div>
   </div>
 
