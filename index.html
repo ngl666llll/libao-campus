@@ -170,6 +170,120 @@
       var u=(typeof input==='string')?input:((input&&input.url)||'');
       /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
          "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
       if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__/i.test(u) && !/^(data|blob):/i.test(u)){
         var body=/time|timestamp/i.test(u)
           ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
@@ -1471,6 +1585,12 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
 
 
 
+
+
+
+
+
+
 <script>
 /* ============================================================================
  * 理宝信息库（__LIBRARY_PATCHED__）
@@ -1852,6 +1972,8 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     '  background:linear-gradient(120deg,#1332ae,#4f39f6 58%,#8d54ff);}',
     /* 手机端：面板铺满 */
     '@media (max-width:640px){',
+    '  html{-webkit-text-size-adjust:100%;}',
+    '  body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain;}',
     '  input,select,textarea{font-size:16px!important;}',
     '  #lib-root .lib-panel{left:0;right:0;top:0;bottom:0;width:auto;max-height:none;',
     '    border-radius:0;transform:none;padding-top:env(safe-area-inset-top);}',
@@ -2518,8 +2640,19 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
 
     var inp = document.getElementById('askInput'), clr = document.getElementById('askClear');
     var tmr = null;
-    inp.addEventListener('input', function () {
+    /* 中文输入法组合期间（拼音还没上屏）不要触发检索，否则会拿拼音字母去匹配，
+       一直闪「没找到」；组合结束（compositionend）再渲染一次。 */
+    var composing = false;
+    inp.addEventListener('compositionstart', function () { composing = true; });
+    inp.addEventListener('compositionend', function () {
+      composing = false;
       clr.classList.toggle('on', !!inp.value);
+      clearTimeout(tmr);
+      tmr = setTimeout(function () { askRender(inp.value); }, 60);
+    });
+    inp.addEventListener('input', function (ev) {
+      clr.classList.toggle('on', !!inp.value);
+      if (composing || (ev && (ev.isComposing || ev.keyCode === 229))) return;
       clearTimeout(tmr);
       tmr = setTimeout(function () { askRender(inp.value); }, 140);
     });
@@ -2666,6 +2799,46 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     }, true);
     setInterval(apply, 500);
     apply();
+  })();
+
+  /* __SAFE_GUARD__ 自愈：任何未捕获异常后，检查"卡死态"并恢复
+     （典型卡死：面板已经关了但 body 还被锁着 overflow:hidden，整页不能滚动；
+       或信息库类还在但元素已不可见，遮罩挡着点击） */
+  (function () {
+    var busy = false;
+    function recover() {
+      if (busy) return;
+      busy = true;
+      try {
+        var lib = document.getElementById('lib-root');
+        var map = document.getElementById('cdut-map-root');
+        /* 注意：这两个容器是 position:fixed，offsetParent 恒为 null，不能用它判断可见性 */
+        function visible(el) {
+          if (!el) return false;
+          if (getComputedStyle(el).display === 'none') return false;
+          var r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0;
+        }
+        var libOn = !!(lib && lib.classList.contains('on') && visible(lib));
+        var mapOn = !!(map && map.classList.contains('cdut-open') && visible(map));
+        if (!libOn && lib && lib.classList.contains('on')) {
+          try { window.__cdutCloseLib && window.__cdutCloseLib(); } catch (e) { }
+        }
+        if (!mapOn && map && map.classList.contains('cdut-open')) {
+          try { window.__cdutCloseMap && window.__cdutCloseMap(); } catch (e) { }
+        }
+        if (!libOn && !mapOn && document.body.style.overflow === 'hidden') {
+          document.body.style.overflow = '';
+          if (document.documentElement.style.overflow === 'hidden') document.documentElement.style.overflow = '';
+        }
+      } catch (e) { }
+      setTimeout(function () { busy = false; }, 400);
+    }
+    window.addEventListener('error', function () { setTimeout(recover, 600); });
+    window.addEventListener('unhandledrejection', function () { setTimeout(recover, 600); });
+    /* 兜底巡检：每 3 秒看一次有没有"锁着但没人用"的状态 */
+    setInterval(recover, 3000);
+    window.__cdutRecover = recover;
   })();
 
   /* __OPEN_PARAM__ 支持 ?open=map / ?open=lib 直接打开（评委通道的快捷入口用） */
