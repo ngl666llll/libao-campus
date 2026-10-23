@@ -322,6 +322,44 @@
       var u=(typeof input==='string')?input:((input&&input.url)||'');
       /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
          "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
+      if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__|get_published|studio\/|\/app\/|\/spark\//i.test(u) && !/^(data|blob):/i.test(u)){
+        var body=/time|timestamp/i.test(u)
+          ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
+          : '{"code":0,"data":{}}';
+        return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+    }catch(e){}
+    return OF.apply(window,arguments);
+  };
+}catch(e){}})();
+/* 平台 SDK 内部还会在拿不到后端时 console.error，内容对使用无意义，这里只静音这几类固定文案 */
+(function(){try{
+  var OE=console.error;
+  console.error=function(){
+    var m=String(arguments[0]==null?'':arguments[0]);
+    if(/published app info|time offset|WebObservableSdk|Failed to start/i.test(m)) return;
+    return OE.apply(console,arguments);
+  };
+}catch(e){}})();
+</script><script>/* __STORAGE_SHIM__ */
+(function(){try{
+  function memStore(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null;},
+    setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];},clear:function(){m={};},
+    key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null;},
+    get length(){return Object.keys(m).length;}};}
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var ok=false;try{var st=window[name];st.setItem('__t','1');st.removeItem('__t');ok=true;}catch(e){}
+    if(!ok){try{Object.defineProperty(window,name,{configurable:true,get:function(){return window['__mem_'+name]||(window['__mem_'+name]=memStore());}});}catch(e){}}
+  });
+}catch(e){}})();
+</script><script>/* __TELEMETRY_MUTE__ */
+(function(){try{
+  var OF=window.fetch; if(!OF) return;
+  window.fetch=function(input,init){
+    try{
+      var u=(typeof input==='string')?input:((input&&input.url)||'');
+      /* 平台 WebObservableSDK 的 log/metric/time 打点：静态站没有后端，会刷 404 与
+         "Failed to init time offset" 报错。这里直接返回空响应，不产生任何请求。 */
       if(u && /observab|telemetry|collector|\/spark\/|apaas|current_server_timestamp|__runtime__/i.test(u) && !/^(data|blob):/i.test(u)){
         var body=/time|timestamp/i.test(u)
           ? '{"code":0,"data":{"timestampNs":"'+Date.now()+'000000"}}'
@@ -1631,6 +1669,8 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
 
 
 
+
+
 <script>
 /* ============================================================================
  * 理宝信息库（__LIBRARY_PATCHED__）
@@ -2598,7 +2638,7 @@ ${e.stack??``}`:typeof e==`object`&&e?xx(e):String(e))}X(Sx,`processLogParams`);
     var actsEl = card ? card.querySelector('.ask-aa') : null;
     if (btn) { btn.disabled = true; btn.textContent = '思考中…'; }
     /* 模型会先推理再作答（reasoning_effort=medium），文案要说"思考"而不是"组织" */
-    if (bodyEl) bodyEl.innerHTML = '<span class="ask-typing"></span>DeepSeek-V4-Flash 正在思考…（约 5 秒）';
+    if (bodyEl) bodyEl.innerHTML = '<span class="ask-typing"></span>DeepSeek-V4-Flash 正在思考再回答…（约 5–10 秒）';
     fetch(AI_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
