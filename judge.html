@@ -89,7 +89,8 @@
       读取的是 GitHub <b>公开资料</b>（头像 / 昵称 / 公开仓库数），仅用于标识评委身份，不会获取你的仓库权限，也不会保存到任何服务器。
     </div>
     <div class="who" id="who">
-      <img id="whoAv" alt="">
+      <img id="whoAv" alt="" onerror="this.style.display='none';var g=document.getElementById('whoInit');if(g)g.style.display='flex';">
+      <div id="whoInit" style="display:none;width:48px;height:48px;border-radius:50%;flex:none;background:linear-gradient(120deg,#1332ae,#4f39f6);color:#fff;font-weight:800;align-items:center;justify-content:center;font-size:17px;">G</div>
       <div>
         <div class="n" id="whoN"></div>
         <div class="m" id="whoM"></div>
@@ -180,6 +181,9 @@
         return r.json();
       })
       .then(function (u) {
+        av.style.display = '';
+        var gi = document.getElementById('whoInit');
+        if (gi) { gi.style.display = 'none'; gi.textContent = (u.login || 'G').slice(0, 1).toUpperCase(); }
         av.src = u.avatar_url;
         nm.textContent = (u.name || u.login) + '  @' + u.login;
         mm.textContent = '公开仓库 ' + u.public_repos + ' 个 · ' + (u.location || '未填写地区') +
