@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>理宝 · 评委通道</title>
+<style>
+  :root{
+    --primary:#1332ae; --violet:#4f39f6; --bg:#eef2fb; --card:#fff; --line:#dbe3f2;
+    --ink:#1f2a3d; --sub:#5a6478; --mute:#8a94a8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -180px,#dfe7ff 0%,var(--bg) 55%,#e9eefb 100%);
+    color:var(--ink);min-height:100vh;padding:28px 18px 60px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .dot{width:34px;height:34px;border-radius:11px;background:linear-gradient(120deg,var(--primary),var(--violet) 60%,#8d54ff);
+       display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;
+       box-shadow:0 8px 18px -8px rgba(19,50,174,.55);}
+  h1{font-size:21px;margin:0;letter-spacing:.02em;}
+  .sub{color:var(--sub);font-size:13px;margin:2px 0 20px;line-height:1.65;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;
+        box-shadow:0 10px 30px -22px rgba(19,50,174,.5);margin-bottom:14px;}
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--primary);display:flex;align-items:center;gap:7px;}
+  .card h2 i{font-style:normal;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(120deg,var(--primary),var(--violet));
+             padding:2px 8px;border-radius:20px;}
+  .row{display:flex;gap:8px;}
+  input[type=text]{flex:1;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 14px;
+    font-size:16px;color:var(--ink);outline:none;background:#fbfcff;transition:.18s;}
+  input[type=text]:focus{border-color:#8fa7e8;box-shadow:0 0 0 4px #1332ae12;}
+  button{height:44px;border:0;border-radius:12px;padding:0 16px;font-size:14px;font-weight:700;cursor:pointer;
+    background:linear-gradient(120deg,var(--primary),var(--violet) 60%,#8d54ff);color:#fff;
+    transition:transform .12s,filter .2s;}
+  button:active{transform:scale(.97);}
+  button.ghost{background:#fff;color:var(--primary);border:1px solid #c9d5f0;}
+  .hint{font-size:12px;color:var(--mute);margin-top:9px;line-height:1.6;}
+  .who{display:none;align-items:center;gap:12px;margin-top:14px;padding:12px;border-radius:13px;
+       background:linear-gradient(120deg,#f2f6ff,#f7f4ff);border:1px solid #e2e9fa;}
+  .who.on{display:flex;}
+  .who img{width:48px;height:48px;border-radius:50%;border:2px solid #fff;box-shadow:0 4px 12px -6px #1332ae88;}
+  .who .n{font-weight:700;font-size:14px;}
+  .who .m{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.5;}
+  .entries{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .entry{display:block;text-decoration:none;padding:14px;border-radius:13px;border:1px solid var(--line);
+         background:#fbfcff;transition:.18s;}
+  .entry:active{transform:scale(.985);background:#f4f7ff;}
+  .entry b{display:block;font-size:14px;color:var(--primary);margin-bottom:3px;}
+  .entry span{font-size:12px;color:var(--sub);line-height:1.5;}
+  ol.steps{margin:0;padding-left:20px;font-size:13px;line-height:1.9;color:#38435a;}
+  ol.steps b{color:var(--primary);}
+  .kv{display:flex;gap:10px;font-size:12.5px;padding:7px 0;border-bottom:1px dashed #e8edf8;}
+  .kv:last-child{border:0;}
+  .kv .k{width:96px;color:var(--mute);flex:none;}
+  .kv .v{color:#38435a;line-height:1.6;}
+  code{background:#f1f5ff;border:1px solid #e2e9fa;border-radius:6px;padding:1px 6px;font-size:12px;color:#24409e;
+       font-family:Consolas,Monaco,monospace;word-break:break-all;}
+  .foot{text-align:center;font-size:12px;color:var(--mute);margin-top:22px;line-height:1.8;}
+  .foot a{color:var(--primary);text-decoration:none;}
+  .badge{display:inline-block;font-size:11px;font-weight:700;color:#2b7a45;background:#eaf6ee;
+         border-radius:20px;padding:2px 9px;margin-left:6px;vertical-align:2px;}
+  @media(max-width:420px){.entries{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="dot">理</div>
+    <h1>理宝 · 评委通道</h1>
+  </div>
+  <p class="sub">
+    成都理工大学 3D 数字校园助手　|　华为智创杯 AI 应用创新大赛<br>
+    用 GitHub 账号确认身份后即可直接体验，无需注册、无需下载。
+  </p>
+
+  <!-- 身份 -->
+  <div class="card">
+    <h2><i>1</i>GitHub 账号</h2>
+    <div class="row">
+      <input id="ghName" type="text" placeholder="输入你的 GitHub 用户名，例如 octocat"
+             autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button id="ghGo">进入</button>
+    </div>
+    <div class="hint" id="ghHint">
+      读取的是 GitHub <b>公开资料</b>（头像 / 昵称 / 公开仓库数），仅用于标识评委身份，不会获取你的仓库权限，也不会保存到任何服务器。
+    </div>
+    <div class="who" id="who">
+      <img id="whoAv" alt="">
+      <div>
+        <div class="n" id="whoN"></div>
+        <div class="m" id="whoM"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 入口 -->
+  <div class="card">
+    <h2><i>2</i>直接体验</h2>
+    <div class="entries">
+      <a class="entry" href="./?open=map" id="eMap">
+        <b>3D 校园地图 →</b>
+        <span>250 栋建筑、182 个地标，单指平移、双指缩放</span>
+      </a>
+      <a class="entry" href="./?open=lib" id="eLib">
+        <b>理宝信息库 →</b>
+        <span>问一句：取快递在哪 / 绩点怎么算 / 校园卡</span>
+      </a>
+      <a class="entry" href="https://github.com/ngl666llll/libao-campus" target="_blank" rel="noopener">
+        <b>源码仓库 →</b>
+        <span>单文件实现，WebGL 渲染器与问答引擎全部可读</span>
+      </a>
+      <a class="entry" href="./" id="eHome">
+        <b>作品首页 →</b>
+        <span>完整的新生动线：入学准备 → 导航 → 办事</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 演示路径 -->
+  <div class="card">
+    <h2><i>3</i>建议的 90 秒体验路径</h2>
+    <ol class="steps">
+      <li>点「3D 校园地图」→ 允许定位，起点自动变成"我的位置"</li>
+      <li>右上「路线导航」→ 点「<b>去取快递</b>」→ 看 302 米 / 4 分钟的路线</li>
+      <li>点地图上的「申通快递·东苑」，详情里有取件分区：<b>400 号以上右侧货架</b></li>
+      <li>返回首页 → 底部「理宝信息库」→ 顶部输入"<b>取快递</b>""<b>绩点</b>""<b>校园卡</b>"</li>
+      <li>在问答结果里点「在地图上定位」，会直接跳到地图并预选导航终点</li>
+    </ol>
+  </div>
+
+  <!-- API 说明 -->
+  <div class="card">
+    <h2><i>4</i>关于「接入 API」</h2>
+    <div class="kv"><div class="k">问答引擎</div><div class="v">本地意图匹配，58 条知识条目，响应 &lt;10 毫秒，<b>断网可用</b>，不把校内政策问题发往云端。</div></div>
+    <div class="kv"><div class="k">场景数据</div><div class="v"><code>scene.json</code> 描述建筑轮廓、高度、屋顶参数、标签与路网，修改数据重新构建即可，无需重做模型。</div></div>
+    <div class="kv"><div class="k">云端通道</div><div class="v">预留了大模型问答接口位（开通云端服务后可切换，支持按用户限次）。当前版本默认走本地引擎，保证离线与响应速度。</div></div>
+    <div class="kv"><div class="k">身份说明</div><div class="v">本页的 GitHub 身份为<b>公开资料标识</b>，非 OAuth 授权登录；如需真正的 GitHub 授权（读取私有仓库等），需部署一个换取 token 的后端服务。</div></div>
+  </div>
+
+  <div class="foot">
+    在线地址　<a href="./">ngl666llll.github.io/libao-campus</a>　·　
+    源码　<a href="https://github.com/ngl666llll/libao-campus" target="_blank" rel="noopener">github.com/ngl666llll/libao-campus</a><br>
+    理宝 · 一个文件，一座校园
+  </div>
+</div>
+
+<script>
+(function () {
+  var inp = document.getElementById('ghName');
+  var btn = document.getElementById('ghGo');
+  var hint = document.getElementById('ghHint');
+  var who = document.getElementById('who');
+  var av = document.getElementById('whoAv');
+  var nm = document.getElementById('whoN');
+  var mm = document.getElementById('whoM');
+
+  /* 记住上次输入 */
+  try {
+    var last = localStorage.getItem('libao_judge_gh');
+    if (last) { inp.value = last; load(last, true); }
+  } catch (e) { }
+
+  function load(name, silent) {
+    name = (name || '').trim().replace(/^@/, '');
+    if (!name) { inp.focus(); return; }
+    if (!/^[A-Za-z0-9-]{1,39}$/.test(name)) {
+      hint.innerHTML = '用户名只能包含字母、数字和连字符，请检查后重试。';
+      return;
+    }
+    btn.disabled = true; btn.textContent = '查询中';
+    fetch('https://api.github.com/users/' + encodeURIComponent(name), { headers: { 'Accept': 'application/vnd.github+json' } })
+      .then(function (r) {
+        if (r.status === 404) { throw new Error('notfound'); }
+        if (r.status === 403) { throw new Error('rate'); }
+        if (!r.ok) { throw new Error('http'); }
+        return r.json();
+      })
+      .then(function (u) {
+        av.src = u.avatar_url;
+        nm.textContent = (u.name || u.login) + '  @' + u.login;
+        mm.textContent = '公开仓库 ' + u.public_repos + ' 个 · ' + (u.location || '未填写地区') +
+          ' · 加入于 ' + String(u.created_at || '').slice(0, 7);
+        who.classList.add('on');
+        hint.innerHTML = '身份已确认。以下入口可直接体验，无需其他注册。';
+        try { localStorage.setItem('libao_judge_gh', u.login); } catch (e) { }
+        /* 让两个入口带上身份标识（仅作展示） */
+        document.getElementById('eMap').href = './?open=map&judge=' + encodeURIComponent(u.login);
+        document.getElementById('eLib').href = './?open=lib&judge=' + encodeURIComponent(u.login);
+      })
+      .catch(function (err) {
+        who.classList.remove('on');
+        var msg = err.message === 'notfound' ? '没有找到这个 GitHub 用户，检查一下拼写？'
+                : err.message === 'rate'  ? 'GitHub 接口今日查询次数用完了，稍后再试，或直接点下面的入口体验。'
+                : '查询失败，可能是网络问题。可以直接点下面的入口体验。';
+        hint.innerHTML = msg;
+      })
+      .then(function () { btn.disabled = false; btn.textContent = '进入'; });
+  }
+
+  btn.addEventListener('click', function () { load(inp.value); });
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') load(inp.value); });
+})();
+</script>
+</body>
+</html>
